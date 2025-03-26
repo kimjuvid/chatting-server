@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>Chatting Test UI</title>
+    <script src="https://cdn.jsdelivr.net/npm/sockjs-client/dist/sockjs.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/stompjs/lib/stomp.min.js"></script>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; background: #f2f2f2; }
+        h2 { color: #444; }
+        .container { background: white; border-radius: 10px; padding: 20px; max-width: 600px; margin: auto; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+        input, button { padding: 10px; margin: 5px 0; width: 100%; box-sizing: border-box; }
+        textarea { width: 100%; height: 200px; margin-top: 10px; }
+        .info { font-size: 0.9em; color: #666; margin-bottom: 10px; }
+        .suggestions div { background: #eee; padding: 5px; cursor: pointer; }
+        .suggestions div:hover { background: #ddd; }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h2>✅ 회원가입</h2>
+    <div class="info">POST /api/v1/auth/create-user</div>
+    <input id="signup-name" placeholder="이름">
+    <input id="signup-password" placeholder="비밀번호">
+    <button onclick="signup()">회원가입</button>
+
+    <h2>✅ 로그인</h2>
+    <div class="info">POST /api/v1/auth/login</div>
+    <input id="login-name" placeholder="이름">
+    <input id="login-password" placeholder="비밀번호">
+    <button onclick="login()">로그인</button>
+
+    <h2>💬 채팅</h2>
+    <div class="info">WebSocket 연결 후 /pub/chat/message/{from} 으로 메시지 전송</div>
+    <input id="from" placeholder="보내는 사람" readonly>
+    <input id="to" placeholder="받는 사람" oninput="searchUser('to')" onchange="loadChatLog()">
+    <div class="suggestions" id="to-suggestions"></div>
+    <input id="message" placeholder="메시지">
+    <button onclick="sendMessage()">메시지 전송</button>
+    <textarea id="log" readonly></textarea>
+</div>
+
+<script>
+    let stompClient = null;
+
+    function signup() {
+      fetch('/api/v1/auth/create-user', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: document.getElementById('signup-name').value,
+          password: document.getElementById('signup-password').value
+        })
+      })
+      .then(res => res.text())
+      .then(alert);
+    }
+
+    function login() {
+      fetch('/api/v1/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: document.getElementById('login-name').value,
+          password: document.getElementById('login-password').value
+        })
+      })
+      .then(res => {
+        if (!res.ok) {
+          return res.text().then(errMsg => { throw new Error(errMsg); });
+        }
+        return res.text();
+      })
+      .then(token => {
+        localStorage.setItem('token', token); // ✅ 토큰 저장
+        alert('로그인 성공!');
+        document.getElementById('from').value = document.getElementById('login-name').value;
+        connectWebSocket();
+      })
+      .catch(err => {
+        alert(`로그인 실패: ${err.message}`);
+      });
+    }
+
+    function connectWebSocket() {
+      const socket = new SockJS('/ws-stomp');
+      stompClient = Stomp.over(socket);
+      stompClient.connect({}, () => {
+        stompClient.subscribe('/sub/chat', (msg) => {
+          const payload = JSON.parse(msg.body);
+          document.getElementById('log').value += `[${payload.from}] ▶ ${payload.to} : ${payload.message}\n`;
+        });
+      });
+    }
+
+    function sendMessage() {
+      const from = document.getElementById('from').value;
+      const to = document.getElementById('to').value;
+      const message = document.getElementById('message').value;
+
+      if (!stompClient) {
+        alert('WebSocket 연결 안 됨');
+        return;
+      }
+
+      stompClient.send(`/pub/chat/message/${from}`, {}, JSON.stringify({ from, to, message }));
+      document.getElementById('message').value = ""; // 입력창 초기화
+    }
+
+    function loadChatLog() {
+      const from = document.getElementById('from').value;
+      const to = document.getElementById('to').value;
+      const log = document.getElementById('log');
+      const token = localStorage.getItem('token');
+
+      if (!token || !from || !to) return;
+
+      fetch(`/api/v1/chat/chat-list?name=${from}&to=${to}`, {
+        method: 'GET',
+        headers: { 'Authorization': `Bearer ${token}` }
+      })
+      .then(res => {
+        if (!res.ok) {
+          return res.text().then(msg => { throw new Error(msg); });
+        }
+        return res.json();
+      })
+      .then(messages => {
+        log.value = '';
+        messages.forEach(m => {
+          log.value += `[${m.from}] ▶ ${m.to} : ${m.message}\n`;
+        });
+      })
+      .catch(err => {
+        alert(`채팅 불러오기 실패: ${err.message}`);
+      });
+    }
+
+    function searchUser(type) {
+      const input = document.getElementById(type).value;
+      const targetDiv = document.getElementById(`${type}-suggestions`);
+      const token = localStorage.getItem('token');
+
+      if (input.length < 1 || !token) {
+        targetDiv.innerHTML = "";
+        return;
+      }
+
+      fetch(`/api/v1/user/search/${input}`, {
+        method: 'GET',
+        headers: { 'Authorization': `Bearer ${token}` }
+      })
+      .then(res => {
+        if (!res.ok) {
+          return res.text().then(msg => { throw new Error(msg); });
+        }
+        return res.json();
+      })
+      .then(users => {
+        targetDiv.innerHTML = '';
+        users.forEach(user => {
+          const div = document.createElement('div');
+          div.textContent = user;
+          div.onclick = () => {
+            document.getElementById(type).value = user;
+            targetDiv.innerHTML = '';
+            if (type === 'to') loadChatLog();
+          };
+          targetDiv.appendChild(div);
+        });
+      })
+      .catch(err => {
+        alert(`유저 검색 실패: ${err.message}`);
+      });
+    }
+</script>
+</body>
+</html>
