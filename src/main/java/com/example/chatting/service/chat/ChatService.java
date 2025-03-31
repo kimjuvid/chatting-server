@@ -1,6 +1,7 @@
 package com.example.chatting.service.chat;
 
 import com.example.chatting.model.chat.Message;
+import com.example.chatting.model.chat.response.ChatListResponse;
 import com.example.chatting.repository.ChatRepository;
 import com.example.chatting.repository.entity.Chat;
 import lombok.RequiredArgsConstructor;
@@ -18,7 +19,7 @@ public class ChatService {
 
     private final ChatRepository chatRepository;
 
-    public List<Message> chatList(String from, String to) {
+    public ChatListResponse chatList(String from, String to) {
         List<Chat> chats = chatRepository.findChatsBetweenUsers(from, to);
 
         List<Message> res = new ArrayList<>();
@@ -27,7 +28,7 @@ public class ChatService {
             res.add(msg);
         }
 
-        return res;
+        return new ChatListResponse(res);
     }
 
     @Transactional

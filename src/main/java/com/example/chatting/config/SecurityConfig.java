@@ -25,23 +25,20 @@ public class SecurityConfig {
 
         http
                 .csrf(csrf -> csrf.disable())
-                .httpBasic(Customizer.withDefaults())
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(
-                                "/chat.html",
-                                "/api/v1/user/**",
+                                "/login.html", "/signup.html", "/chat.html",
                                 "/api/v1/auth/**",
+                                "/api/v1/user/**",
                                 "/api/v1/chat/**",
-                                "/swagger-ui/**",
-                                "/v3/api-docs/**",
-                                "/ws-stomp/**"
+                                "/swagger-ui/**", "/v3/api-docs/**",
+                                "/ws-stomp/**",
+                                "/css/**", "/js/**", "/img/**"
                         ).permitAll()
                         .anyRequest().authenticated()
                 )
-                .exceptionHandling(ex -> ex
-                        .authenticationEntryPoint(jwtAuthenticationEntryPoint)
-                )
+                .exceptionHandling(ex -> ex.authenticationEntryPoint(jwtAuthenticationEntryPoint))
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();

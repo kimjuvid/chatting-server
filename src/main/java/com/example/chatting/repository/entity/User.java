@@ -1,5 +1,6 @@
 package com.example.chatting.repository.entity;
 
+import com.example.chatting.common.Role;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -20,6 +21,9 @@ public class User {
 
     @Column(nullable = false)
     private String name;
+
+    @Enumerated(EnumType.STRING)
+    private Role role;  // ROLE_USER, ROLE_ADMIN
 
     @Column
     private Timestamp created_at;

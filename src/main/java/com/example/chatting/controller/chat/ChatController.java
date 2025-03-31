@@ -1,6 +1,7 @@
 package com.example.chatting.controller.chat;
 
 import com.example.chatting.model.chat.Message;
+import com.example.chatting.model.chat.response.ChatListResponse;
 import com.example.chatting.service.chat.ChatService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -26,7 +27,7 @@ public class ChatController {
             description = "가장 최근 10개의 채팅 리스트를 가져옵니다."
     )
     @GetMapping("/chat-list")
-    public List<Message> chatList(
+    public ChatListResponse chatList(
             @RequestParam("name") String from,
             @RequestParam("to") String to
     ) {

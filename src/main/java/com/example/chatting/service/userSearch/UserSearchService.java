@@ -1,5 +1,7 @@
 package com.example.chatting.service.userSearch;
 
+import com.example.chatting.common.exception.ErrorCode;
+import com.example.chatting.model.userSearch.response.UserSearchResponse;
 import com.example.chatting.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -14,10 +16,10 @@ public class UserSearchService {
 
     private final UserRepository userRepository;
 
-    public List<String> searchUser(String name, String user) {
+    public UserSearchResponse searchUser(String name, String user) {
         System.out.println(name);
         System.out.println(user);
         List<String> names = userRepository.findNameByNameMatch(name,user);
-        return names;
+        return new UserSearchResponse(ErrorCode.SUCCESS, names);
     }
 }

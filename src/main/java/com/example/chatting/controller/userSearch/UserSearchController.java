@@ -1,5 +1,6 @@
 package com.example.chatting.controller.userSearch;
 
+import com.example.chatting.model.userSearch.response.UserSearchResponse;
 import com.example.chatting.service.userSearch.UserSearchService;
 import io.swagger.v3.oas.annotations.Operation;
 import lombok.RequiredArgsConstructor;
@@ -23,7 +24,7 @@ public class UserSearchController {
             description = "User Name을 기반으로 Like 검색 실행"
     )
     @GetMapping("/search/{name}")
-    public List<String> searchUser(
+    public UserSearchResponse searchUser(
             @PathVariable("name") String name
     ) {
         String user = SecurityContextHolder.getContext()

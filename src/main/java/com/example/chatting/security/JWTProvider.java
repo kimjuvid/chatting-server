@@ -116,6 +116,7 @@ import com.auth0.jwt.algorithms.Algorithm;
 import com.auth0.jwt.exceptions.*;
 import com.auth0.jwt.interfaces.DecodedJWT;
 import com.example.chatting.common.Constants;
+import com.example.chatting.common.Role;
 import jakarta.annotation.PostConstruct;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -151,9 +152,10 @@ public class JWTProvider {
     }
 
     // Access Token 생성
-    public String createAccessToken(String username) {
+    public String createAccessToken(String username, Role role) {
         return JWT.create()
                 .withSubject(username)
+                .withClaim("role", role.name())
                 .withIssuedAt(new Date())
                 .withExpiresAt(new Date(System.currentTimeMillis() + accessTokenValidity * Constants.ON_MINUTE_TO_MILLIS))
                 .sign(accessAlgorithm);

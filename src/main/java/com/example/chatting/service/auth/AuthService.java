@@ -1,5 +1,10 @@
 package com.example.chatting.service.auth;
 
+import com.example.chatting.common.Role;
+import com.example.chatting.common.exception.CustomException;
+import com.example.chatting.common.exception.ErrorCode;
+import com.example.chatting.model.auth.response.CreateUserResponse;
+import com.example.chatting.model.auth.response.LoginResponse;
 import com.example.chatting.repository.entity.User;
 import com.example.chatting.repository.entity.UserCredentials;
 import com.example.chatting.model.auth.request.CreateUserRequest;
@@ -26,7 +31,7 @@ public class AuthService {
     private final JWTProvider jwtProvider;
 
     @Transactional
-    public String createUser(CreateUserRequest createUserRequest){
+    public CreateUserResponse createUser(CreateUserRequest createUserRequest){
 
         Optional<User> user = userRepository.findByName(createUserRequest.name());
 
@@ -35,44 +40,43 @@ public class AuthService {
 
         if (user.isPresent()){
             // 예외 코드 적용
-            return "이미 사용중인 아이디가 존재합니다.";
+            throw new CustomException(ErrorCode.USER_ALREADY_EXISTS);
         }
 
         try{
             User newUser = this.newUser(createUserRequest.name());
             UserCredentials newUserCredentials = this.newUserCredentials(createUserRequest.password(),newUser);
             newUser.setUserCredentials(newUserCredentials);
-
+            newUser.setRole(Role.ROLE_USER);
             User saveUser = userRepository.save(newUser);
 
-//            if (saveUser == null){
-//                return "회원생성 실패";
-//                // 예외 처리 코드
-//            }
+            if (saveUser == null){
+                throw new CustomException(ErrorCode.USER_SAVED_FAILED);
+            }
         }catch (Exception e){
-            System.out.println("예외 : " + e);
+            throw new CustomException(ErrorCode.USER_SAVED_FAILED, e.getMessage());
         }
 
-        return "Success";
+        return new CreateUserResponse(createUserRequest.name());
     }
 
-    public String login(LoginRequest request){
+    public LoginResponse login(LoginRequest request){
         Optional<User> user = userRepository.findByName(request.name());
 
         if (!user.isPresent()) {
-            throw new RuntimeException("존재하지 않는 아이디입니다.");
+            throw new CustomException(ErrorCode.NOT_EXIST_USER);
         }
 
         User u = user.get();
         String hashedValue = hashing.getHashingValue(request.password());
 
         if (!u.getUserCredentials().getHashed_password().equals(hashedValue)) {
-            throw new RuntimeException("비밀번호가 일치하지 않습니다.");
+            throw new CustomException(ErrorCode.MIS_MATCH_PASSWORD);
         }
 
-        String token = jwtProvider.createAccessToken(request.name());
+        String token = jwtProvider.createAccessToken(request.name(), u.getRole());
         System.out.println(token);
-        return token;
+        return new LoginResponse(ErrorCode.SUCCESS, token);
     }
 
 

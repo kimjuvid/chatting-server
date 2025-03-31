@@ -2,6 +2,8 @@ package com.example.chatting.controller.auth;
 
 import com.example.chatting.model.auth.request.CreateUserRequest;
 import com.example.chatting.model.auth.request.LoginRequest;
+import com.example.chatting.model.auth.response.CreateUserResponse;
+import com.example.chatting.model.auth.response.LoginResponse;
 import com.example.chatting.service.auth.AuthService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -25,7 +27,7 @@ public class AuthController {
             description = "새로운 유정 생성"
     )
     @PostMapping("/create-user")
-    public String createUser(@RequestBody @Valid CreateUserRequest request){
+    public CreateUserResponse createUser(@RequestBody @Valid CreateUserRequest request){
         return authService.createUser(request);
     }
 
@@ -34,7 +36,7 @@ public class AuthController {
             description = "로그인 진행"
     )
     @PostMapping("/login")
-    public String login(@RequestBody @Valid LoginRequest request){
+    public LoginResponse login(@RequestBody @Valid LoginRequest request){
         return authService.login(request);
     }
 }
