@@ -10,12 +10,6 @@ import java.util.List;
 
 @Repository
 public interface ChatRepository extends JpaRepository<Chat,Long> {
-    //List<Chat> findTop10BySenderOrReceiverOrderByTIDDesc(String sender, String Receiver);
 
-    @Query("SELECT c FROM Chat c " +
-            "WHERE (c.sender = :sender AND c.receiver = :receiver) " +
-            "   OR (c.sender = :receiver AND c.receiver = :sender) " +
-            "ORDER BY c.TID DESC")
-    List<Chat> findChatsBetweenUsers(@Param("sender") String from,
-                                     @Param("receiver") String to);
+    List<Chat> findAllByChatRoomIdOrderBySentAtAsc(Long chatRoomId);
 }
