@@ -2,10 +2,18 @@ package com.example.chatting.repository.entity;
 
 import com.example.chatting.common.ChatRoomType;
 import jakarta.persistence.*;
+import lombok.*;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 
+
+@Getter
+@Setter
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
+@Table(name = "ChatRoom")
 @Entity
 public class ChatRoom {
 
@@ -15,12 +23,7 @@ public class ChatRoom {
 
     private String name;
 
-    @Enumerated(EnumType.STRING)
-    private ChatRoomType chatRoomType;      // private, group ..
-
-    private Integer maxParticipants;
-
     private LocalDateTime createAt;
-    private LocalDateTime clodeAt;
+    private LocalDateTime closeAt;
 
 }
