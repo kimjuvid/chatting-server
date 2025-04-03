@@ -3,219 +3,449 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>실시간 채팅</title>
+    <title>채팅 & 친구 관리</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
+    <script src="https://cdn.jsdelivr.net/npm/sockjs-client@1/dist/sockjs.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/stompjs@2.3.3/lib/stomp.min.js"></script>
     <style>
         body {
           background: url('/img/background.jpg') no-repeat center center fixed;
-          background-size: contain;
-          background-color: #c7ccc0;
+          background-size: cover;
           font-family: 'Segoe UI', 'Apple SD Gothic Neo', sans-serif;
-          height: 100vh;
           margin: 0;
           padding: 0;
         }
-
-        .chat-container {
-          width: 90%;                /* 💡 뷰포트에 맞춰 유동적으로 너비 조절 */
-          max-width: 800px;          /* 💡 데스크탑 최대 너비 제한 */
-          min-width: 320px;          /* 💡 너무 작아지는 것도 방지 */
-          margin: 60px auto;
-          background: white;
-          border-radius: 15px;
-          box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
-          padding: 25px;
+        .container {
+          margin-top: 50px;
+          background-color: rgba(255, 255, 255, 0.95);
+          border-radius: 12px;
+          padding: 20px;
+          box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
         }
-
-        .chat-box {
-          height: 400px;
+        .chat-log {
+          height: 300px;
           overflow-y: auto;
+          border-radius: 8px;
+          background: #f1f3f5;
           padding: 10px;
-          background-color: #f8f9fa;
-          border-radius: 10px;
-          margin-bottom: 15px;
+          margin-bottom: 10px;
         }
-
-        .btn-send {
-          background: linear-gradient(90deg, #feda75, #fa7e1e, #d62976);
-          color: white;
-          font-weight: bold;
-          border: none;
-          border-radius: 10px;
+        .chat-room-list, .friend-list {
+          max-height: 200px;
+          overflow-y: auto;
+        }
+        .btn-create-room {
+          width: 100%;
+        }
+        .selected-users {
+          background: #f8f9fa;
+          border-radius: 8px;
           padding: 10px;
-          transition: background 0.3s ease-in-out;
-        }
-
-        .btn-send:hover {
-          background: linear-gradient(90deg, #fa7e1e, #d62976);
-        }
-
-        .message {
-          margin-bottom: 12px;
-          display: flex;
-          flex-direction: column;
-        }
-
-        .from-me {
-          align-items: flex-end;
-        }
-
-        .from-me .bubble {
-          background-color: #fee500;
-          color: #333;
-          border-radius: 10px 0 10px 10px;
-        }
-
-        .from-you {
-          align-items: flex-start;
-        }
-
-        .from-you .bubble {
-          background-color: #e4e6eb;
-          color: #111;
-          border-radius: 0 10px 10px 10px;
-        }
-
-        .bubble {
-          padding: 10px 14px;
-          max-width: 70%;
-          word-wrap: break-word;
-          font-size: 0.95rem;
-        }
-
-        .chat-input {
-          display: flex;
-          gap: 10px;
-        }
-
-        .chat-input input {
-          flex-grow: 1;
-        }
-
-        .username {
-          font-size: 0.8rem;
-          color: #888;
-          margin-bottom: 3px;
+          margin-top: 10px;
         }
     </style>
 </head>
 <body>
-<div class="chat-container">
-    <h4 class="text-center mb-4">💬 실시간 채팅</h4>
+<div class="container">
+    <ul class="nav nav-tabs">
+        <li class="nav-item">
+            <button class="nav-link active" data-bs-toggle="tab" data-bs-target="#chat">실시간 채팅</button>
+        </li>
+        <li class="nav-item">
+            <button class="nav-link" data-bs-toggle="tab" data-bs-target="#friend">친구 관리</button>
+        </li>
+    </ul>
 
-    <div class="mb-2">
-        <label class="form-label">받는 사람</label>
-        <input type="text" class="form-control" id="to" placeholder="상대방 이름" oninput="searchUser()" onchange="loadChatLog()" />
-        <div id="to-suggestions"></div>
-    </div>
+    <div class="tab-content mt-3">
+        <div class="tab-pane fade show active" id="chat">
+            <div class="row">
+                <div class="col-md-8">
+                    <h4>💬 채팅창</h4>
+                    <div id="room-info" class="mb-2">
+                        <strong>현재 대화방 : </strong> <span id="current-room-name">없음</span><br/>
+                        <strong>참여자 : </strong> <span id="participant-list">-</span>
+                    </div>
+                    <div class="chat-log" id="chat-log"></div>
+                    <div class="d-flex">
+                        <input type="text" class="form-control me-2" id="chat-input" placeholder="메시지 입력">
+                        <button class="btn btn-primary" onclick="sendMessage()">전송</button>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <h6>내 채팅방 목록</h6>
+                    <div class="chat-room-list border rounded p-2 mb-2" id="chat-room-list"></div>
+                    <button class="btn btn-warning btn-create-room" data-bs-toggle="modal" data-bs-target="#createRoomModal">➕ 채팅방 생성</button>
+                </div>
+            </div>
+        </div>
 
-    <div class="chat-box" id="log"></div>
-
-    <div class="chat-input">
-        <input type="text" id="message" class="form-control" placeholder="메시지 입력" />
-        <button class="btn btn-send" onclick="sendMessage()">전송</button>
+        <div class="tab-pane fade" id="friend">
+            <div class="row">
+                <div class="col-md-6">
+                    <h6>🔍 친구 검색 및 요청</h6>
+                    <input type="text" id="search-name" class="form-control mb-2" placeholder="친구 이름 입력">
+                    <button class="btn btn-outline-primary" onclick="sendFriendRequest()">친구 요청</button>
+                </div>
+                <div class="col-md-6">
+                    <h6>📩 친구 요청 알림</h6>
+                    <div class="border rounded p-2" id="friend-request-list" style="height: 150px; overflow-y: auto;"></div>
+                </div>
+            </div>
+            <div class="mt-3">
+                <h6>👥 나의 친구 목록</h6>
+                <input type="text" id="search-friend" class="form-control mb-2" placeholder="친구 검색" oninput="searchFriend()">
+                <div class="friend-list border rounded p-2" id="friend-list"></div>
+            </div>
+        </div>
     </div>
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/sockjs-client/dist/sockjs.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/stompjs/lib/stomp.min.js"></script>
+<!-- 채팅방 생성 모달 -->
+<div class="modal fade" id="createRoomModal" tabindex="-1" aria-labelledby="createRoomModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">채팅방 생성</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="닫기"></button>
+            </div>
+            <div class="modal-body">
+                <input type="text" id="room-name" class="form-control mb-2" placeholder="채팅방 이름">
+                <input type="text" id="search-user" class="form-control mb-2" placeholder="친구 검색" oninput="filterFriends()">
+                <div id="friend-search-list"></div>
+                <div class="selected-users" id="selected-users"></div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">취소</button>
+                <button type="button" class="btn btn-primary" onclick="createChatRoom()">생성</button>
+            </div>
+        </div>
+    </div>
+</div>
 
 <script>
-    let stompClient = null;
-    const username = localStorage.getItem("username");
     const token = localStorage.getItem("token");
+    const username = localStorage.getItem("username");
+    let friendCache = [];
+    let selectedUsers = [];
+    let currentRoomId = null;
 
-    if (!username || !token) {
-      alert("로그인이 필요합니다.");
-      window.location.href = "/login.html";
+    let subscription = null;
+    let sock = new SockJS("/ws-stomp");
+    let stomp = Stomp.over(sock);
+
+    stomp.connect({}, () => {
+      console.log("WebSocket 연결 성공");
+    });
+
+    function sendMessage() {
+      const message = document.getElementById("chat-input").value;
+      console.log("전송 메시지:", message);
+      console.log("currentRoomId:", currentRoomId);
+      if (!currentRoomId || !message) return;
+      stomp.send("/pub/chat/message", {}, JSON.stringify({
+        chatRoomId: currentRoomId,
+        sender: username,
+        message: message
+      }));
+      document.getElementById("chat-input").value = "";
     }
 
-    window.onload = () => {
-      connectWebSocket();
-    };
+    function enterRoom(roomId) {
+      currentRoomId = roomId;
+      document.getElementById("chat-log").innerHTML = "";
 
-    function connectWebSocket() {
-      const socket = new SockJS("/ws-stomp");
-      stompClient = Stomp.over(socket);
-      stompClient.connect({}, () => {
-        stompClient.subscribe("/sub/chat", (msg) => {
-          const payload = JSON.parse(msg.body);
-          appendMessage(payload.from, payload.message);
+      if (subscription !== null) {
+        subscription.unsubscribe();
+      }
+
+      subscription = stomp.subscribe("/sub/chat/room/" + roomId, (msg) => {
+        const data = JSON.parse(msg.body);
+        const log = document.getElementById("chat-log");
+        const div = document.createElement("div");
+        div.className = "mb-2";
+        div.style.textAlign = (data.sender === username) ? "right" : "left";
+        div.innerHTML = `<strong>${data.sender}</strong>: ${data.message}`;
+        log.appendChild(div);
+
+      });
+
+      fetch(`/api/v1/chatroom/${roomId}/info`, {
+          headers: { Authorization: `Bearer ${token}` }
+        })
+        .then(res => res.json())
+        .then(data => {
+          document.getElementById("current-room-name").innerText = data.roomName;
+          const participantSpan = document.getElementById("participant-list");
+          participantSpan.innerHTML = "";
+
+          data.participants.forEach(name => {
+            const isMe = name === username;
+            const isOwner = name === data.ownerName;
+            const span = document.createElement("span");
+            span.className = "me-2";
+            span.innerHTML = `${isOwner ? '👑 ' : '👤 '}<strong>${name}</strong>`;
+
+            if (!isMe && data.ownerName === username) {
+              const btn = document.createElement("button");
+              btn.className = "btn btn-sm btn-danger ms-1 me-2";
+              btn.innerText = "강퇴";
+              btn.onclick = () => kickUser(roomId, name);
+              span.appendChild(btn);
+            }
+            participantSpan.appendChild(span);
+          });
+        });
+
+
+      fetch(`/api/v1/chatroom/${roomId}/messages`, {
+        headers: { Authorization: `Bearer ${token}` }
+      })
+      .then(res => res.json())
+      .then(data => {
+        const log = document.getElementById("chat-log");
+        log.innerHTML = "";
+        data.forEach(chat => {
+          const div = document.createElement("div");
+          div.className = "mb-2";
+          div.style.textAlign = (chat.sender === username) ? "right" : "left";
+          div.innerHTML = `<strong>${chat.sender}</strong>: ${chat.message}`;
+          log.appendChild(div);
         });
       });
     }
 
-    function sendMessage() {
-      const to = document.getElementById("to").value;
-      const message = document.getElementById("message").value;
-      if (!message || !to) return;
-
-      stompClient.send(`/pub/chat/message/${username}`, {}, JSON.stringify({ from: username, to, message }));
-      document.getElementById("message").value = "";
-    }
-
-    function appendMessage(from, message) {
-      const log = document.getElementById("log");
-      const isMe = from === username;
-
-      const wrapper = document.createElement("div");
-      wrapper.className = `message ${isMe ? "from-me" : "from-you"}`;
-
-      const sender = document.createElement("div");
-      sender.className = "username";
-      sender.textContent = isMe ? "나" : from;
-
-      const bubble = document.createElement("div");
-      bubble.className = "bubble";
-      bubble.textContent = message;
-
-      wrapper.appendChild(sender);
-      wrapper.appendChild(bubble);
-      log.appendChild(wrapper);
-      log.scrollTop = log.scrollHeight;
-    }
-
-    function loadChatLog() {
-      const to = document.getElementById("to").value;
-      fetch(`/api/v1/chat/chat-list?name=${username}&to=${to}`, {
-        method: "GET",
-        headers: { Authorization: `Bearer ${token}` },
-      })
-        .then((res) => res.json())
-        .then((messages) => {
-          const log = document.getElementById("log");
-          log.innerHTML = "";
-          messages.forEach((m) => {
-            appendMessage(m.from, m.message);
+        function loadChatRooms() {
+          fetch(`/api/v1/chatroom/show`, {
+            headers: { 'Authorization': `Bearer ${token}` }
+          })
+          .then(res => res.json())
+          .then(data => {
+            const list = document.getElementById("chat-room-list");
+            list.innerHTML = "";
+            data.roomInfos.forEach(room => {
+              const div = document.createElement("div");
+              div.className = "d-flex justify-content-between align-items-center mb-2";
+              div.innerHTML = `
+                <span>${room.roomName}</span>
+                <div>
+                  <button class="btn btn-sm btn-outline-primary me-1" onclick="enterRoom(${room.chatRoomId})">입장</button>
+                  <button class="btn btn-sm btn-outline-danger" onclick="leaveRoom(${room.chatRoomId})">나가기</button>
+                </div>
+              `;
+              list.appendChild(div);
+            });
           });
-        });
-    }
+        }
 
-    function searchUser() {
-      const input = document.getElementById("to").value;
-      const suggestions = document.getElementById("to-suggestions");
+        function leaveRoom(roomId) {
+          if (confirm("정말 나가시겠습니까?")) {
+            fetch(`/api/v1/chatroom/leave?roomId=${roomId}`, {
+              method: "DELETE",
+              headers: { 'Authorization': `Bearer ${token}` }
+            })
+            .then(res => {
+              if (!res.ok) throw new Error("서버 오류");
+              return res.text(); // DELETE는 응답 본문이 없어도 됨
+            })
+            .then(() => {
+              alert("채팅방을 나갔습니다.");
+              loadChatRooms(); // ✅ 서버 작업 완료 후 실행
+            })
+            .catch(err => {
+              alert("채팅방 나가기 중 오류가 발생했습니다.");
+              console.error(err);
+            });
+          }
+        }
 
-      if (!input) return;
+        function sendFriendRequest() {
+          const accepter = document.getElementById('search-name').value;
+          fetch(`/api/v1/friend/request?accepter=${accepter}`, {
+            method: 'POST',
+            headers: { 'Authorization': `Bearer ${token}` }
+          })
+          .then(res => res.json())
+          .then(data => alert("친구 요청 완료: " + data.description.message));
+        }
 
-      fetch(`/api/v1/user/search/${input}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      })
-        .then((res) => res.json())
-        .then((names) => {
-          suggestions.innerHTML = "";
-          names.name.forEach((name) => {
+        function loadFriendRequests() {
+          fetch(`/api/v1/friend/request/receivedlist`, {
+            headers: { 'Authorization': `Bearer ${token}` }
+          })
+          .then(res => res.json())
+          .then(data => {
+            const listDiv = document.getElementById("friend-request-list");
+            listDiv.innerHTML = "";
+            data.receivedFriendList.forEach(item => {
+              const container = document.createElement("div");
+              container.className = "d-flex justify-content-between align-items-center mb-2";
+              container.innerHTML = `
+                <span>${item.requesterName}</span>
+                <div>
+                  <button class="btn btn-sm btn-success me-1" onclick="handleFriendAction(${item.requestId}, 'ACCEPTED')">수락</button>
+                  <button class="btn btn-sm btn-danger" onclick="handleFriendAction(${item.requestId}, 'REJECTED')">거절</button>
+                </div>
+              `;
+              listDiv.appendChild(container);
+            });
+          });
+        }
+
+        function handleFriendAction(id, status) {
+          fetch(`/api/v1/friend/request/receivedlist/handle?requestId=${id}&status=${status}`, {
+            method: 'POST',
+            headers: { 'Authorization': `Bearer ${token}` }
+          })
+          .then(res => res.json())
+          .then(() => {
+            alert("처리 완료");
+            loadFriendRequests();
+            loadMyFriendList();
+          });
+        }
+
+        function loadMyFriendList() {
+          fetch("/api/v1/friend/list", {
+            headers: { Authorization: `Bearer ${token}` }
+          })
+          .then(res => res.json())
+          .then(data => {
+            const container = document.getElementById("friend-list");
+            friendCache = data.receivedFriendList;
+            container.innerHTML = "";
+            data.receivedFriendList.forEach(item => {
+              const div = document.createElement("div");
+              div.className = "d-flex justify-content-between align-items-center mb-2";
+              div.innerHTML = `
+                <span>${item.requesterName}</span>
+                <button class="btn btn-sm btn-outline-danger" onclick="deleteFriend(${item.requestId})">삭제</button>
+              `;
+              container.appendChild(div);
+            });
+          });
+        }
+
+        function deleteFriend(id) {
+          fetch(`/api/v1/friend/list/delete?requestId=${id}`, {
+            method: "DELETE",
+            headers: { 'Authorization': `Bearer ${token}` }
+          })
+          .then(res => res.json())
+          .then(() => {
+            alert("삭제 완료");
+            loadMyFriendList();
+          });
+        }
+
+        function searchFriend() {
+          const keyword = document.getElementById("search-friend").value;
+          fetch(`/api/v1/friend/list/search?keyword=${keyword}`, {
+            headers: { 'Authorization': `Bearer ${token}` }
+          })
+          .then(res => res.json())
+          .then(data => {
+            const friendList = document.getElementById("friend-list");
+            friendList.innerHTML = "";
+            data.receivedFriendList.forEach(f => {
+              const div = document.createElement("div");
+              div.className = "d-flex justify-content-between align-items-center mb-2";
+              div.innerHTML = `
+                <span>${f.requesterName}</span>
+                <button class="btn btn-sm btn-outline-danger" onclick="deleteFriend(${f.requestId})">삭제</button>
+              `;
+              friendList.appendChild(div);
+            });
+          });
+        }
+
+        function filterFriends() {
+          const keyword = document.getElementById("search-user").value.toLowerCase();
+          const container = document.getElementById("friend-search-list");
+          container.innerHTML = "";
+          const filtered = friendCache.filter(f => f.requesterName.toLowerCase().includes(keyword));
+          filtered.forEach(friend => {
             const div = document.createElement("div");
-            div.textContent = name;
-            div.style.cursor = "pointer";
-            div.onclick = () => {
-              document.getElementById("to").value = name;
-              suggestions.innerHTML = "";
-              loadChatLog();
-            };
-            suggestions.appendChild(div);
+            div.className = "d-flex justify-content-between align-items-center mb-2";
+            div.innerHTML = `
+              <span>${friend.requesterName}</span>
+              <button class="btn btn-sm btn-outline-success" onclick="addUser('${friend.requesterName}')">추가</button>
+            `;
+            container.appendChild(div);
           });
-        });
-    }
+        }
+
+
+        function kickUser(roomId, targetName) {
+          if (confirm(`${targetName}님을 강퇴하시겠습니까?`)) {
+            fetch(`/api/v1/chatroom/kick`, {
+              method: "POST",
+              headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+              },
+              body: JSON.stringify({ roomId: roomId, targetName: targetName })
+            })
+            .then(res => res.text())
+            .then(() => {
+              alert(`${targetName} 강퇴 완료`);
+              enterRoom(roomId); // 강퇴 후 참여자 목록 갱신
+            });
+          }
+        }
+
+        function addUser(name) {
+          if (!selectedUsers.includes(name)) {
+            selectedUsers.push(name);
+            updateSelectedUsers();
+          }
+        }
+
+        function updateSelectedUsers() {
+          const container = document.getElementById("selected-users");
+          container.innerHTML = "<strong>선택된 참여자:</strong> " + selectedUsers.join(", ");
+        }
+
+        function createChatRoom() {
+          const roomName = document.getElementById("room-name").value;
+          const requestData = {
+            roomName: roomName,
+            ownerName: username,
+            userNames: [...selectedUsers, username]
+          };
+
+          fetch("/api/v1/chatroom/create", {
+            method: "POST",
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify(requestData)
+          })
+          .then(res => res.json())
+          .then(() => {
+            alert("채팅방 생성 완료!");
+            selectedUsers = [];
+            updateSelectedUsers();
+
+            const modalElement = document.getElementById('createRoomModal');
+            const modalInstance = bootstrap.Modal.getInstance(modalElement);
+            if (modalInstance) {
+              modalInstance.hide();
+            }
+
+            document.getElementById("selected-users").innerHTML = "";
+            document.getElementById("room-name").value = "";
+
+            loadChatRooms();
+          });
+        }
+
+        window.onload = () => {
+          loadFriendRequests();
+          loadMyFriendList();
+          loadChatRooms();
+        };
 </script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>

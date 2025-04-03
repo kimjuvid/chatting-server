@@ -1,6 +1,6 @@
 package com.example.chatting.model.chat.response;
 
-import com.example.chatting.model.chat.Message;
+import com.example.chatting.model.multiChat.ChatMessageResponse;
 import io.swagger.v3.oas.annotations.media.Schema;
 
 import java.util.List;
@@ -8,6 +8,6 @@ import java.util.List;
 @Schema(description = "Chatting content")
 public record ChatListResponse(
         @Schema(description = "return message")
-        List<Message> result
+        List<ChatMessageResponse> result
 ) {
 }

@@ -4,6 +4,7 @@ import jakarta.persistence.*;
 import lombok.*;
 
 import java.sql.Timestamp;
+import java.time.LocalDateTime;
 
 @Entity
 @Getter
@@ -20,14 +21,13 @@ public class Chat {
     private Long TID;
 
     @Column
-    private String sender;
-
-    @Column
-    private String receiver;
-
-    @Column
     private String message;
 
-    @Column
-    private Timestamp created_at;
+    @ManyToOne
+    private User sender;
+
+    @ManyToOne
+    private ChatRoom chatRoom;
+
+    private LocalDateTime sentAt;
 }
