@@ -63,3 +63,16 @@ tasks.named('test') {
 	useJUnitPlatform()
 }
 
+// Spring Boot 빌드시 두개의 JAR파일이 생성될 수 있는데 그중 plain JAR 생성을 막기위한 설정
+tasks.withType(Jar) {
+	duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+}
+
+jar {
+	enabled = false
+}
+
+bootJar {
+	enabled = true
+}
+
