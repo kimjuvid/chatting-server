@@ -49,6 +49,6 @@ jobs:
           
           # 실제 이미지 업데이트
           export IMAGE_URI="${{ env.IMAGE_URI }}"
-          kubectl set image deployment/chatting-deployment chatting-container=$IMAGE_URI -n chatting-namespace
+          kubectl set image deployment/chatting-deployment chatting-container=$IMAGE_URI
           EOF
 
