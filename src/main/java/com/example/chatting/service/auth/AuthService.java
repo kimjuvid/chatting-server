@@ -39,7 +39,6 @@ public class AuthService {
         System.out.println(createUserRequest.password());
 
         if (user.isPresent()){
-            // 예외 코드 적용
             throw new CustomException(ErrorCode.USER_ALREADY_EXISTS);
         }
 
@@ -57,7 +56,7 @@ public class AuthService {
             throw new CustomException(ErrorCode.USER_SAVED_FAILED, e.getMessage());
         }
 
-        return new CreateUserResponse(createUserRequest.name());
+        return new CreateUserResponse(ErrorCode.SUCCESS);
     }
 
     public LoginResponse login(LoginRequest request){
