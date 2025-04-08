@@ -28,7 +28,7 @@ public class SecurityConfig {
                 "/chat.html",
                 "/css/**", "/js/**", "/img/**", "/favicon.ico"
             );
-        }
+        };
             
     }
     
