@@ -1,4 +1,6 @@
-server.port: 7002
+server:
+   port: 8080
+   address: 0.0.0.0
 springdoc:
   swagger-ui:
     enabled: true
@@ -8,17 +10,17 @@ spring:
   application:
     name: chatting
   datasource:
-    url: jdbc:mysql://localhost:3306/Spring_Chatting
-    username: root
-    password: root
+    url: ${DB_URL}
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
     driver-class-name: com.mysql.cj.jdbc.Driver
   jpa:
     hibernate:
       ddl-auto: update
     show-sql: true
   redis:
-    host: localhost
-    port: 6379
+    host: ${REDIS_HOST}
+    port: ${REDIS_PORT}
 
 token:
   secret-key: "SECRET"

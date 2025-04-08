@@ -2,7 +2,8 @@ name: Deploy to EC2 via ECR & Kubernetes
 
 on:
   push:
-    branches: [ "main" ]
+    branches: ["main"]
+  workflow_dispatch:
 
 jobs:
   deploy:
@@ -41,6 +42,12 @@ jobs:
       - name: Connect to EC2 and update Kubernetes deployment
         run: |
           ssh -o StrictHostKeyChecking=no -i ec2_key.pem ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} << EOF
-            export IMAGE_URI="${{ env.IMAGE_URI }}"
-            kubectl set image deployment/chatting-deployment chatting-container=$IMAGE_URI -n chatting-namespace
+          sudo mkdir -p /home/ubuntu/.kube
+          sudo cp /etc/rancher/k3s/k3s.yaml /home/ubuntu/.kube/config
+          sudo chown ubuntu:ubuntu /home/ubuntu/.kube/config
+          export KUBECONFIG=/home/ubuntu/.kube/config
+
+          # apply deployment yaml
+          cd ~/k8s
+          kubectl apply -f chatting-deployment.yaml
           EOF
