@@ -27,13 +27,11 @@ public class SecurityConfig {
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(
-                                "/login.html", "/signup.html", "/chat.html",
-                                "/api/v1/auth/**",
-                                "/api/v1/user/**",
-                                "/api/v1/chat/**",
+                                "/login.html",
+                                "/signup.html",
+                                "/css/**", "/js/**", "/img/**",
                                 "/swagger-ui/**", "/v3/api-docs/**",
-                                "/ws-stomp/**",
-                                "/css/**", "/js/**", "/img/**"
+                                "/api/v1/auth/**"
                         ).permitAll()
                         .anyRequest().authenticated()
                 )
