@@ -22,10 +22,14 @@ public class SecurityConfig {
 
     @Bean
     public WebSecurityCustomizer webSecurityCustomizer() {
-        return (web) -> web.ignoring().requestMatchers(
+        return (web) -> {
+            System.out.println("✅ ignoring /chat.html 적용 중");
+            web.ignoring().requestMatchers(
                 "/chat.html",
                 "/css/**", "/js/**", "/img/**", "/favicon.ico"
-        );
+            );
+        }
+            
     }
     
     @Bean
