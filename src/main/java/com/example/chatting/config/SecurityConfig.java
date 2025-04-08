@@ -28,8 +28,9 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(
                                 "/login.html",
+                                "/chat.html",
                                 "/signup.html",
-                                "/css/**", "/js/**", "/img/**",
+                                "/css/**", "/js/**", "/img/**", "/favicon.ico",
                                 "/swagger-ui/**", "/v3/api-docs/**",
                                 "/api/v1/auth/**"
                         ).permitAll()
