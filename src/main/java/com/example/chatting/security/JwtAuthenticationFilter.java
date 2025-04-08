@@ -19,6 +19,7 @@ import org.springframework.web.filter.OncePerRequestFilter;
 import java.io.IOException;
 import java.util.List;
 
+// JWT 토큰 유효성 검사 및 인증정보를 SecurityContext에 저장하는 필터
 @Component
 @RequiredArgsConstructor
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
@@ -53,8 +54,9 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 SecurityContextHolder.getContext().setAuthentication(authentication);
 
             } catch (JWTVerificationException ex) {
-                response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-                response.getWriter().write("JWT 토큰이 유효하지 않습니다.");
+                SecurityContextHolder.clearContext(); // 기존 context 클리어
+                request.setAttribute("exception", ex); // 예외 정보 attribute로 넘김 (선택)
+                filterChain.doFilter(request, response); // EntryPoint에 위임
                 return;
             }
         }

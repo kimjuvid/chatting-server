@@ -20,6 +20,6 @@ public class JWTAuthenticationEntryPoint implements AuthenticationEntryPoint {
     ) throws IOException, ServletException {
         response.setContentType("application/json;charset=UTF-8");
         response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-        response.getWriter().write("{\"error\": \"인증이 필요합니다.\"}");
+        response.sendRedirect("/login.html");
     }
 }
