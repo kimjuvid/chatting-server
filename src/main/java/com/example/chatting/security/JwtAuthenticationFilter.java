@@ -33,7 +33,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
         // 임시
         String uri = request.getRequestURI();
-        if (uri.endsWith("chat.html")) {
+        if (uri.contains("chat.html")) {
             filterChain.doFilter(request, response);
             return;
         }
