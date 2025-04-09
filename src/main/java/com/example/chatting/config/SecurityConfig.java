@@ -37,6 +37,7 @@ public class SecurityConfig {
                                 "/api/v1/auth/**",
                                 "/ws-stomp/**",
                                 "/chat.html",
+                                "/chat",
                                 "/css/**", "/js/**", "/img/**", "/favicon.ico"
                         ).permitAll()
                         .anyRequest().authenticated()
