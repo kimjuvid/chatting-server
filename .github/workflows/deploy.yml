@@ -54,6 +54,15 @@ jobs:
           sudo chown ubuntu:ubuntu /home/ubuntu/.kube/config
           export KUBECONFIG=/home/ubuntu/.kube/config
 
+          echo "[INFO] Creating or updating ECR secret..."
+          kubectl delete secret ecr-secret --ignore-not-found
+          aws ecr get-login-password --region ap-northeast-2 | \
+          kubectl create secret docker-registry ecr-secret \
+            --docker-server=863518451270.dkr.ecr.ap-northeast-2.amazonaws.com \
+            --docker-username=AWS \
+            --docker-password=$(aws ecr get-login-password --region ap-northeast-2) \
+            --docker-email=dummy@email.com
+
           echo "[INFO] Applying Kubernetes deployment..."
           cd ~/k8s
           kubectl apply -f chatting-deployment.yaml
