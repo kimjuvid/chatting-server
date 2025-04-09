@@ -35,6 +35,7 @@ public class SecurityConfig {
                                 "/api/v1/auth/**",
                                 "/api/v1/chatroom/**",
                                 "/api/v1/friend/**",
+                                "/api/v1/auth/ping",
                                 "/swagger-ui/**", "/v3/api-docs/**",
                                 "/ws-stomp/**",
                                 "/css/**", "/js/**", "/img/**"
