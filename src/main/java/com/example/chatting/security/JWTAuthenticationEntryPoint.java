@@ -18,13 +18,16 @@ public class JWTAuthenticationEntryPoint implements AuthenticationEntryPoint {
             HttpServletResponse response,
             AuthenticationException authException
     ) throws IOException, ServletException {
-        String uri = request.getRequestURI();
 
-        // HTML 페이지 요청이면 리디렉션
-        if (uri.endsWith(".html")) {
+        String uri = request.getRequestURI();
+        String accept = request.getHeader("Accept");
+
+        boolean isHtmlRequest = uri.endsWith(".html") || uri.equals("/") ||
+                (accept != null && accept.contains("text/html"));
+
+        if (isHtmlRequest) {
             response.sendRedirect("/login.html");
         } else {
-            // API 요청이면 JSON 에러 반환
             response.setContentType("application/json;charset=UTF-8");
             response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
             response.getWriter().write("{\"message\": \"Unauthorized\"}");
