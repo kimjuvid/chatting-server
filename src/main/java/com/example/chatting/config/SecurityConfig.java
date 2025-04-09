@@ -33,8 +33,8 @@ public class SecurityConfig {
                         .requestMatchers(
                                 "/login.html", "/signup.html", "/chat.html",
                                 "/api/v1/auth/**",
-                                "/api/v1/user/**",
-                                "/api/v1/chat/**",
+                                "/api/v1/chatroom/**",
+                                "/api/v1/friend/**",
                                 "/swagger-ui/**", "/v3/api-docs/**",
                                 "/ws-stomp/**",
                                 "/css/**", "/js/**", "/img/**"
