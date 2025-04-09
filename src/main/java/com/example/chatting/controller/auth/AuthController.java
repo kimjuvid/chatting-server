@@ -41,7 +41,7 @@ public class AuthController {
     }
     
     // 서버 수평확장 test
-    @GetMapping("/api/ping")
+    @GetMapping("/ping")
     public Map<String, String> ping(HttpServletRequest request) {
         String podName = System.getenv("HOSTNAME"); // Kubernetes에서 pod name으로 자동 주입됨
         return Map.of("message", "pong", "pod", podName);
