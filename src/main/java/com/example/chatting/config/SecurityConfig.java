@@ -31,14 +31,13 @@ public class SecurityConfig {
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(
-                                "/login.html",
-                                "/signup.html",
-                                "/swagger-ui/**", "/v3/api-docs/**",
+                                "/login.html", "/signup.html", "/chat.html",
                                 "/api/v1/auth/**",
+                                "/api/v1/user/**",
+                                "/api/v1/chat/**",
+                                "/swagger-ui/**", "/v3/api-docs/**",
                                 "/ws-stomp/**",
-                                "/chat.html",
-                                "/chat",
-                                "/css/**", "/js/**", "/img/**", "/favicon.ico"
+                                "/css/**", "/js/**", "/img/**"
                         ).permitAll()
                         .anyRequest().authenticated()
                 )
