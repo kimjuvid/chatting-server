@@ -20,7 +20,7 @@
 
 ---
 
-## 🗺 서비스 FlowChart
+## 🗺 FlowChart
 <img src="https://github.com/user-attachments/assets/d2aeafe2-3595-4c93-adf7-16580c5ae27e" width="65%" height="800px">  
 
 ---
